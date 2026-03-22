@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Capture — AI Backbone</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #0a0a0a;
+      color: #e0e0e0;
+      font-family: 'IBM Plex Mono', 'Courier New', monospace;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+
+    .container { width: 100%; max-width: 540px; }
+
+    h1 { font-size: 1.1rem; font-weight: 600; color: #c8f55a; margin-bottom: 0.25rem; }
+    .subtitle { font-size: 0.75rem; color: #666; margin-bottom: 1.5rem; }
+
+    label {
+      display: block; font-size: 0.7rem; text-transform: uppercase;
+      letter-spacing: 0.08em; color: #888; margin-bottom: 0.35rem;
+    }
+
+    .field { margin-bottom: 1rem; }
+
+    textarea, input, select {
+      width: 100%; background: #141414; border: 1px solid #2a2a2a;
+      border-radius: 6px; color: #e0e0e0; font-family: inherit;
+      font-size: 0.85rem; padding: 0.6rem 0.75rem; outline: none;
+      transition: border-color 0.15s;
+    }
+
+    textarea:focus, input:focus, select:focus { border-color: #c8f55a; }
+    textarea { min-height: 160px; resize: vertical; line-height: 1.5; }
+
+    select {
+      appearance: none; cursor: pointer;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23888'%3E%3Cpath d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 0.75rem center;
+    }
+
+    .row { display: flex; gap: 0.75rem; }
+    .row > .field { flex: 1; }
+
+    .stars { display: flex; gap: 0.35rem; padding: 0.4rem 0; }
+    .stars button {
+      background: none; border: none; font-size: 1.3rem; cursor: pointer;
+      color: #333; transition: color 0.1s; padding: 0; line-height: 1;
+    }
+    .stars button.active { color: #c8f55a; }
+    .stars button:hover { color: #c8f55a; }
+
+    .submit-btn {
+      width: 100%; background: #c8f55a; color: #0a0a0a; border: none;
+      border-radius: 6px; padding: 0.7rem; font-family: inherit;
+      font-size: 0.85rem; font-weight: 600; cursor: pointer;
+      letter-spacing: 0.02em; transition: opacity 0.15s; margin-top: 0.5rem;
+    }
+    .submit-btn:hover { opacity: 0.9; }
+    .submit-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .status { text-align: center; font-size: 0.8rem; margin-top: 0.75rem; min-height: 1.2rem; }
+    .status.ok { color: #c8f55a; }
+    .status.err { color: #ff6b6b; }
+
+    .auth-wall { text-align: center; }
+    .auth-wall input { max-width: 280px; margin: 0 auto 0.75rem; text-align: center; }
+    .auth-wall .submit-btn { max-width: 280px; margin: 0 auto; }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div id="auth" class="auth-wall">
+    <h1>Capture</h1>
+    <p class="subtitle">AI Backbone</p>
+    <div class="field">
+      <input type="password" id="password" placeholder="Enter your API key" autocomplete="off">
+    </div>
+    <button class="submit-btn" onclick="authenticate()">Unlock</button>
+    <div id="auth-status" class="status"></div>
+  </div>
+
+  <div id="form" class="hidden">
+    <h1>Capture</h1>
+    <p class="subtitle">Store a memory in your AI backbone</p>
+
+    <div class="field">
+      <label for="content">Content</label>
+      <textarea id="content" placeholder="Paste or type anything worth remembering..."></textarea>
+    </div>
+
+    <div class="row">
+      <div class="field">
+        <label for="category">Category</label>
+        <select id="category">
+          <option value="business">Business</option>
+          <option value="content">Content</option>
+          <option value="community">Community</option>
+          <option value="insight">Insight</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="source">Source</label>
+        <select id="source">
+          <option value="manual">Manual</option>
+          <option value="chatgpt">ChatGPT</option>
+          <option value="claude_session">Claude</option>
+          <option value="research">Research</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Importance</label>
+      <div class="stars" id="stars"></div>
+    </div>
+
+    <div class="field">
+      <label for="tags">Tags (comma-separated)</label>
+      <input type="text" id="tags" placeholder="strategy, voice, product">
+    </div>
+
+    <button class="submit-btn" id="submit" onclick="submit()">Store Memory</button>
+    <div id="status" class="status"></div>
+  </div>
+</div>
+
+<script>
+  const API_BASE = window.location.origin;
+  let apiKey = '';
+  let importance = 3;
+
+  const starsEl = document.getElementById('stars');
+  for (let i = 1; i <= 5; i++) {
+    const btn = document.createElement('button');
+    btn.textContent = '\u2605';
+    btn.dataset.val = i;
+    btn.className = i <= importance ? 'active' : '';
+    btn.onclick = () => {
+      importance = i;
+      starsEl.querySelectorAll('button').forEach(b => {
+        b.className = parseInt(b.dataset.val) <= i ? 'active' : '';
+      });
+    };
+    starsEl.appendChild(btn);
+  }
+
+  function authenticate() {
+    const pw = document.getElementById('password').value.trim();
+    if (!pw) return;
+    apiKey = pw;
+    document.getElementById('auth').classList.add('hidden');
+    document.getElementById('form').classList.remove('hidden');
+  }
+
+  document.getElementById('password').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') authenticate();
+  });
+
+  async function submit() {
+    const content = document.getElementById('content').value.trim();
+    if (!content) { showStatus('Content is required', true); return; }
+
+    const btn = document.getElementById('submit');
+    btn.disabled = true;
+    btn.textContent = 'Storing...';
+
+    const tags = document.getElementById('tags').value.split(',').map(t => t.trim()).filter(Boolean);
+
+    try {
+      const res = await fetch(`${API_BASE}/api/ingest`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey },
+        body: JSON.stringify({
+          content,
+          category: document.getElementById('category').value,
+          source: document.getElementById('source').value,
+          importance,
+          tags,
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        showStatus('Stored. Memory ID: ' + data.id, false);
+        document.getElementById('content').value = '';
+        document.getElementById('tags').value = '';
+        importance = 3;
+        starsEl.querySelectorAll('button').forEach(b => {
+          b.className = parseInt(b.dataset.val) <= 3 ? 'active' : '';
+        });
+      } else {
+        showStatus(data.error || 'Failed to store', true);
+      }
+    } catch (err) {
+      showStatus('Network error: ' + err.message, true);
+    }
+
+    btn.disabled = false;
+    btn.textContent = 'Store Memory';
+  }
+
+  function showStatus(msg, isErr) {
+    const el = document.getElementById('status');
+    el.textContent = msg;
+    el.className = 'status ' + (isErr ? 'err' : 'ok');
+    if (!isErr) setTimeout(() => { el.textContent = ''; }, 5000);
+  }
+</script>
+</body>
+</html>

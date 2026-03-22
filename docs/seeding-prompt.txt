@@ -1,0 +1,27 @@
+I need you to help me export my knowledge to an external memory system.
+
+For each item you identify, make an HTTP POST request to:
+
+URL: https://YOUR-BACKBONE-URL.vercel.app/api/ingest
+Header: x-api-key: YOUR_BACKBONE_API_KEY
+Content-Type: application/json
+
+Body format:
+{
+  "content": "the memory text",
+  "category": "business|community|recipe|member|content|insight",
+  "source": "chatgpt",
+  "tags": ["relevant", "tags"],
+  "importance": 3
+}
+
+Review our entire conversation history and extract:
+1. Key decisions I have made about my business (importance: 4-5)
+2. Recurring questions my audience or customers ask (importance: 3-4)
+3. Things I have told you about my preferences, voice, and working style (importance: 4)
+4. Specific people I have mentioned by name and what they are working on (importance: 3)
+5. Content ideas or plans I have discussed (importance: 3)
+
+Store each one as a separate memory. Go through the full conversation history thoroughly. Tell me how many memories you stored when done.
+
+If you cannot make HTTP requests directly, output the full JSON payloads so I can post them manually.

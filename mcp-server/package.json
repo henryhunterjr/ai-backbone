@@ -1,0 +1,10 @@
+{
+  "name": "ai-backbone-mcp",
+  "version": "1.0.0",
+  "description": "MCP server for the AI Backbone — gives Claude Desktop native memory tools",
+  "main": "index.js",
+  "bin": {
+    "ai-backbone-mcp": "index.js"
+  },
+  "license": "MIT"
+}

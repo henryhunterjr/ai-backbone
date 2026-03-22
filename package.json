@@ -1,0 +1,15 @@
+{
+  "name": "ai-backbone",
+  "version": "1.0.0",
+  "description": "A shared memory layer that connects every AI tool you use into one brain.",
+  "scripts": {
+    "dev": "vercel dev"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.90.1"
+  },
+  "devDependencies": {
+    "@vercel/node": "^5.6.18"
+  },
+  "license": "MIT"
+}
