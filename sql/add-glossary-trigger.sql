@@ -20,7 +20,19 @@ as $$
 declare
   payload jsonb;
   response_status int;
+  api_key text;
 begin
+  -- Read the API key from Supabase vault (set via Dashboard > Settings > Vault)
+  -- To add: INSERT INTO vault.secrets (name, secret) VALUES ('backbone_api_key', 'your-key-here');
+  select decrypted_secret into api_key
+    from vault.decrypted_secrets
+    where name = 'backbone_api_key'
+    limit 1;
+
+  if api_key is null then
+    raise warning 'backbone_api_key not found in vault — skipping webhook';
+    return NEW;
+  end if;
   payload := jsonb_build_object(
     'title', NEW.name,
     'url', 'https://crust-and-crumb-tawny.vercel.app/dictionary#' || NEW.slug,
@@ -38,13 +50,12 @@ begin
   );
 
   -- POST to the backbone content queue
-  -- Replace YOUR_BACKBONE_API_KEY with the actual key, or use vault
   perform http_post(
     'https://asset-map-vert.vercel.app/api/ingest/pending',
     payload::text,
     'application/json',
     ARRAY[
-      http_header('x-api-key', 'BACKBONE_API_KEY_FROM_VAULT')
+      http_header('x-api-key', api_key)
     ]
   );
 
